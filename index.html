@@ -241,6 +241,136 @@
             
               
                 
+                <a class="post-title-link" href="/2016/03/26/图片加载/" itemprop="url">
+                  图片优化小记
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-03-26T12:09:37+08:00" content="2016-03-26">
+              2016-03-26
+            </time>
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2016/03/26/图片加载/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/03/26/图片加载/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>对图片资源的加载渲染将影响页面呈现，处理好图片加载才能给用户更好的体验。</p>
+<p>首先，聊一些题外话了， DNS 预解析缓存</p>
+<h2 id="DNS-预解析缓存"><a href="#DNS-预解析缓存" class="headerlink" title="DNS 预解析缓存"></a>DNS 预解析缓存</h2><p>众所周知，解析 DNS 是网站性能优化的比较重要的一部分，虽然加载时间不太长，但是很难压缩起来。<br>特别是为了并发下载资源而使用多个 CDN 域名来加载资源的大型网站，更不可忽视，每加载资源之前都要先进行 CDN 域名的 DNS 解析转换。</p>
+<p>如果采用 DNS 预加载，支持该功能的浏览器就会提前对该域名进行 DNS 解析并且缓存一下，而不会在需要请求资源再进行解析。<br>以下是淘宝的用法：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="title">link</span> <span class="attribute">rel</span>=<span class="value">"dns-prefetch"</span> <span class="attribute">href</span>=<span class="value">"//g.tbcdn.cn"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="title">link</span> <span class="attribute">rel</span>=<span class="value">"dns-prefetch"</span> <span class="attribute">href</span>=<span class="value">"//g.alicdn.com"</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<hr>
+<p>好了，进入正题。</p>
+<h2 id="图片优化的常用方法"><a href="#图片优化的常用方法" class="headerlink" title="图片优化的常用方法"></a>图片优化的常用方法</h2><ul>
+<li>减少文件体积大小</li>
+<li>减少图片资源请求数(合并HTTP请求)</li>
+</ul>
+<h3 id="减少图片文件体积大小"><a href="#减少图片文件体积大小" class="headerlink" title="减少图片文件体积大小"></a>减少图片文件体积大小</h3><ul>
+<li>压缩优化图片大小</li>
+<li>采用合适的图片格式</li>
+</ul>
+<h3 id="减少图片资源请求数"><a href="#减少图片资源请求数" class="headerlink" title="减少图片资源请求数"></a>减少图片资源请求数</h3><ul>
+<li>css sprites(雪碧图)</li>
+<li>内嵌 DataURL</li>
+</ul>
+<h2 id="预加载"><a href="#预加载" class="headerlink" title="预加载"></a>预加载</h2><p>为了完整地呈现页面给用户，通过一定的技术预先加载图片资源，等加载渲染完毕再把页面呈现给用户。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">PreLoad(sourceArr, cb);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注意应该先绑定回调，再改变src</span></span><br><span class="line"><span class="keyword">var</span> element = <span class="built_in">document</span>.createElement(<span class="string">"img"</span>)</span><br><span class="line">   </span><br><span class="line">loadSource(element, url)</span><br><span class="line">element.src = url</span><br></pre></td></tr></table></figure>
+<h3 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h3><ol>
+<li>onload和src赋值的先后顺序, onload函数要写在改变src前,这样确保了onload函数一定会被调用</li>
+<li>complete只是变向的在判断img是否已经触发了load事件,而且是不精准的判断。complete在不同浏览器下,表现不一致,不建议使用</li>
+<li>无论浏览器是否存在图片缓存,重新请求图片地址,都会触发onload事件</li>
+</ol>
+<h2 id="懒加载"><a href="#懒加载" class="headerlink" title="懒加载"></a>懒加载</h2><p>指的是图片在页面渲染的时候先不加载，页面渲染完成后在指定动作触发后再加载图片。<br>常见的一种懒加载技术是以可见距离作为触发点。当页面滑动到屏幕可见区域时，则进行加载图片。</p>
+<p>实现的原理是：</p>
+<ul>
+<li>先将图片的实际src，记录在data-src属性中。</li>
+<li>监听屏幕滚动，计算图片的Y坐标，并计算可视区域的高度 viewport_height ，当Y小于等于(viewport_height)时，图片的src的值用data-src的来替换，从而来实现图片的懒加载。</li>
+</ul>
+<h3 id="相关接口"><a href="#相关接口" class="headerlink" title="相关接口"></a>相关接口</h3><ul>
+<li>getBoundingClientRect： 获取一个element元素的viewport坐标  </li>
+<li>window.innerHeight || document.documentElement.clientHeight： 页面可视区高度的获取</li>
+</ul>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a href="http://aotu.io/notes/2016/03/09/img-loading-optimization-in-mobile/" target="_blank" rel="external">凹凸实验室</a></li>
+<li><a href="http://www.jianshu.com/p/d3a02ffe94b6" target="_blank" rel="external">图片的异步加载与onload函数</a></li>
+</ul>
+
+          
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2016/03/15/给自己的一封信/" itemprop="url">
                   给自己的一封信
                 </a>
@@ -374,7 +504,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">1</span>
+              <span class="site-state-item-count">2</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -391,7 +521,7 @@
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
